@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
-import GenderRepresentation from './GenderRepresentation';
-import ScientificDiscoveries from './ScientificDiscoveries';
-import About from './About';
+import React from 'react';
+import GenderRepresentation from './GenderRepresentation.jsx';
+import ScientificDiscoveries from './ScientificDiscoveries.jsx';
+import About from './About.jsx';
 
 const App = () => {
-  const [activeView, setActiveView] = useState('gender');
+  const [activeView, setActiveView] = React.useState('gender');
 
   return (
     <div className="container mx-auto p-4">

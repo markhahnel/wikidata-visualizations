@@ -340,127 +340,120 @@ const ScientificDiscoveries = () => {
       <h2 className="text-xl font-bold mb-4">Geographic Distribution of Scientific Discoveries</h2>
       
       {fallbackMode ? (
-        <div className="border p-4 bg-yellow-100 text-center">
-          <p className="font-medium">GitHub Pages has security restrictions that prevent loading data directly from Wikidata.</p>
-          <p className="mt-2">To view these visualizations:</p>
-          <ol className="list-decimal ml-8 mt-2 text-left">
-            <li>Clone the repository: <code>git clone https://github.com/markhahnel/wikidata-visualizations.git</code></li>
-            <li>Install dependencies: <code>npm install</code></li>
-            <li>Run locally: <code>npm start</code></li>
-          </ol>
+        <div className="border p-4 bg-yellow-100">
+          <p className="font-medium">Using demo data - GitHub Pages has security restrictions that prevent loading data directly from Wikidata.</p>
+          <p className="mt-2">This visualization demonstrates the geographic distribution of scientific discoveries throughout history.</p>
         </div>
+      ) : null}
+      
+      <div className="flex flex-wrap gap-4 mb-6">
+        <div>
+          <label className="block text-sm font-medium mb-1">Time Period:</label>
+          <div className="flex items-center gap-2">
+            <span>{timeRange[0]}</span>
+            <input
+              type="range"
+              min="1800"
+              max="2023"
+              value={timeRange[0]}
+              onChange={(e) => setTimeRange([parseInt(e.target.value), timeRange[1]])}
+              className="w-24"
+            />
+            <span>to</span>
+            <input
+              type="range"
+              min="1800"
+              max="2023"
+              value={timeRange[1]}
+              onChange={(e) => setTimeRange([timeRange[0], parseInt(e.target.value)])}
+              className="w-24"
+            />
+            <span>{timeRange[1]}</span>
+          </div>
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium mb-1">Scientific Field:</label>
+          <select 
+            value={selectedField}
+            onChange={(e) => setSelectedField(e.target.value)}
+            className="border rounded p-1"
+          >
+            <option value="all">All Fields</option>
+            {fields.map(field => (
+              <option key={field} value={field}>{field.charAt(0).toUpperCase() + field.slice(1)}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+      
+      <div className="flex flex-wrap gap-4 mb-2">
+        {["physics", "chemistry", "biology", "medicine", "computer science"].map(field => (
+          <div key={field} className="flex items-center">
+            <span 
+              className="inline-block w-3 h-3 mr-1 rounded-full" 
+              style={{ backgroundColor: fieldColorScale(field) }}
+            ></span>
+            <span className="text-xs">{field.charAt(0).toUpperCase() + field.slice(1)}</span>
+          </div>
+        ))}
+      </div>
+      
+      {loading ? (
+        <div className="flex justify-center items-center h-64">Loading data from Wikidata...</div>
+      ) : error && !fallbackMode ? (
+        <div className="text-red-500 p-4">Error: {error}</div>
       ) : (
         <>
-          <div className="flex flex-wrap gap-4 mb-6">
-            <div>
-              <label className="block text-sm font-medium mb-1">Time Period:</label>
-              <div className="flex items-center gap-2">
-                <span>{timeRange[0]}</span>
-                <input
-                  type="range"
-                  min="1800"
-                  max="2023"
-                  value={timeRange[0]}
-                  onChange={(e) => setTimeRange([parseInt(e.target.value), timeRange[1]])}
-                  className="w-24"
-                />
-                <span>to</span>
-                <input
-                  type="range"
-                  min="1800"
-                  max="2023"
-                  value={timeRange[1]}
-                  onChange={(e) => setTimeRange([timeRange[0], parseInt(e.target.value)])}
-                  className="w-24"
-                />
-                <span>{timeRange[1]}</span>
+          <div className="relative border rounded p-4 mb-4 bg-white">
+            <svg ref={mapRef} className="w-full"></svg>
+            {selectedPoint && (
+              <div className="absolute top-4 right-4 bg-white p-3 rounded shadow-md border w-64">
+                <h3 className="font-bold">{selectedPoint.discoveryLabel}</h3>
+                <div className="text-sm mt-2">
+                  <p><span className="font-medium">Year:</span> {selectedPoint.year}</p>
+                  <p><span className="font-medium">Field:</span> {selectedPoint.fieldLabel || selectedPoint.fieldCategory}</p>
+                  <p><span className="font-medium">Location:</span> {selectedPoint.locationLabel}, {selectedPoint.countryLabel}</p>
+                  <p><span className="font-medium">Discoverer:</span> {selectedPoint.discovererLabel || "Unknown"}</p>
+                </div>
               </div>
-            </div>
+            )}
+          </div>
+          
+          <div className="border rounded p-4 mb-4 bg-white">
+            <h3 className="text-lg font-semibold mb-2">Timeline of Discoveries</h3>
+            <p className="text-sm mb-2">Hover over decades to see key discoveries from that period</p>
+            <svg ref={timelineRef} className="w-full"></svg>
             
-            <div>
-              <label className="block text-sm font-medium mb-1">Scientific Field:</label>
-              <select 
-                value={selectedField}
-                onChange={(e) => setSelectedField(e.target.value)}
-                className="border rounded p-1"
-              >
-                <option value="all">All Fields</option>
-                {fields.map(field => (
-                  <option key={field} value={field}>{field.charAt(0).toUpperCase() + field.slice(1)}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-          
-          <div className="flex flex-wrap gap-4 mb-2">
-            {["physics", "chemistry", "biology", "medicine", "computer science"].map(field => (
-              <div key={field} className="flex items-center">
-                <span 
-                  className="inline-block w-3 h-3 mr-1 rounded-full" 
-                  style={{ backgroundColor: fieldColorScale(field) }}
-                ></span>
-                <span className="text-xs">{field.charAt(0).toUpperCase() + field.slice(1)}</span>
+            {selectedDecade && decadeHighlightedData.length > 0 && (
+              <div className="mt-2">
+                <h4 className="font-medium">Key discoveries in the {selectedDecade}s:</h4>
+                <ul className="text-sm mt-1 max-h-40 overflow-y-auto">
+                  {decadeHighlightedData.slice(0, 10).map((item, index) => (
+                    <li key={index} className="mb-1">
+                      <span className="font-medium">{item.year}:</span> {item.discoveryLabel} 
+                      {item.locationLabel ? ` (${item.locationLabel})` : ''}
+                    </li>
+                  ))}
+                </ul>
               </div>
-            ))}
-          </div>
-          
-          {loading ? (
-            <div className="flex justify-center items-center h-64">Loading data from Wikidata...</div>
-          ) : error ? (
-            <div className="text-red-500 p-4">Error: {error}</div>
-          ) : (
-            <>
-              <div className="relative border rounded p-4 mb-4 bg-white">
-                <svg ref={mapRef} className="w-full"></svg>
-                {selectedPoint && (
-                  <div className="absolute top-4 right-4 bg-white p-3 rounded shadow-md border w-64">
-                    <h3 className="font-bold">{selectedPoint.discoveryLabel}</h3>
-                    <div className="text-sm mt-2">
-                      <p><span className="font-medium">Year:</span> {selectedPoint.year}</p>
-                      <p><span className="font-medium">Field:</span> {selectedPoint.fieldLabel || selectedPoint.fieldCategory}</p>
-                      <p><span className="font-medium">Location:</span> {selectedPoint.locationLabel}, {selectedPoint.countryLabel}</p>
-                      <p><span className="font-medium">Discoverer:</span> {selectedPoint.discovererLabel || "Unknown"}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-              
-              <div className="border rounded p-4 mb-4 bg-white">
-                <h3 className="text-lg font-semibold mb-2">Timeline of Discoveries</h3>
-                <p className="text-sm mb-2">Hover over decades to see key discoveries from that period</p>
-                <svg ref={timelineRef} className="w-full"></svg>
-                
-                {selectedDecade && decadeHighlightedData.length > 0 && (
-                  <div className="mt-2">
-                    <h4 className="font-medium">Key discoveries in the {selectedDecade}s:</h4>
-                    <ul className="text-sm mt-1 max-h-40 overflow-y-auto">
-                      {decadeHighlightedData.slice(0, 10).map((item, index) => (
-                        <li key={index} className="mb-1">
-                          <span className="font-medium">{item.year}:</span> {item.discoveryLabel} 
-                          {item.locationLabel ? ` (${item.locationLabel})` : ''}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-          
-          <div className="text-sm text-gray-600">
-            <p>Data source: Wikidata SPARQL Query Service</p>
-            <p className="mt-2">
-              <strong>Analysis:</strong> This visualization reveals how centers of scientific discovery have shifted 
-              geographically over time. The map shows the locations of major scientific discoveries and inventions, 
-              while the timeline shows the frequency of discoveries by decade.
-            </p>
-            <p className="mt-2">
-              <strong>Note:</strong> This visualization relies on data available in Wikidata. Some discoveries may be 
-              missing or have incomplete location information.
-            </p>
+            )}
           </div>
         </>
       )}
+      
+      <div className="text-sm text-gray-600">
+        <p>Data source: {fallbackMode ? "Demo data" : "Wikidata SPARQL Query Service"}</p>
+        <p className="mt-2">
+          <strong>Analysis:</strong> This visualization reveals how centers of scientific discovery have shifted 
+          geographically over time. The map shows the locations of major scientific discoveries and inventions, 
+          while the timeline shows the frequency of discoveries by decade.
+        </p>
+        <p className="mt-2">
+          <strong>Note:</strong> This visualization relies on data available in Wikidata. Some discoveries may be 
+          missing or have incomplete location information.
+        </p>
+      </div>
     </div>
   );
 };

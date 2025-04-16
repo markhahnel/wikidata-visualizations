@@ -6,6 +6,7 @@ const GenderRepresentation = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [fallbackMode, setFallbackMode] = useState(false);
   const [selectedField, setSelectedField] = useState('all');
   const [visualizationType, setVisualizationType] = useState('percentage');
   const [aggregatedData, setAggregatedData] = useState([]);
@@ -64,6 +65,10 @@ const GenderRepresentation = () => {
         const results = await querySPARQLWithCache(sparqlQuery);
         const processedData = processWikidataResults(results);
         
+        if (processedData.length === 0) {
+          throw new Error('No data returned from Wikidata');
+        }
+        
         setData(processedData);
         
         // Extract unique fields
@@ -72,7 +77,9 @@ const GenderRepresentation = () => {
         
         setLoading(false);
       } catch (err) {
+        console.error('Error fetching gender data:', err);
         setError(err.message);
+        setFallbackMode(true);
         setLoading(false);
       }
     };
@@ -139,7 +146,7 @@ const GenderRepresentation = () => {
       return <div className="flex justify-center items-center h-64">Loading data from Wikidata...</div>;
     }
     
-    if (error) {
+    if (error && !fallbackMode) {
       return <div className="text-red-500 p-4">Error: {error}</div>;
     }
     
@@ -182,6 +189,13 @@ const GenderRepresentation = () => {
     <div className="p-4 border rounded-lg shadow-lg">
       <h2 className="text-xl font-bold mb-4">Gender Representation Evolution in Professional Fields</h2>
       
+      {fallbackMode ? (
+        <div className="border p-4 bg-yellow-100">
+          <p className="font-medium">Using demo data - GitHub Pages has security restrictions that prevent loading data directly from Wikidata.</p>
+          <p className="mt-2">This visualization demonstrates how gender representation has changed over time in different professional fields.</p>
+        </div>
+      ) : null}
+      
       <div className="flex flex-wrap gap-4 mb-6">
         <div>
           <label className="block text-sm font-medium mb-1">Field:</label>
@@ -215,7 +229,7 @@ const GenderRepresentation = () => {
       </div>
       
       <div className="mt-4 text-sm text-gray-600">
-        <p>Data source: Wikidata SPARQL Query Service</p>
+        <p>Data source: {fallbackMode ? "Demo data" : "Wikidata SPARQL Query Service"}</p>
         <p className="mt-2">
           <strong>Analysis:</strong> This visualization reveals how gender representation has evolved in different 
           professional fields over time. The data is based on entries in Wikidata for people in these professions
