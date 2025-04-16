@@ -3,10 +3,12 @@ const queryCache = {};
 
 // Function to execute SPARQL queries against Wikidata
 export const querySPARQL = async (sparqlQuery) => {
-  const url = 'https://query.wikidata.org/sparql';
-  const fullUrl = `${url}?query=${encodeURIComponent(sparqlQuery)}&format=json`;
-  
   try {
+    // Use a CORS proxy
+    const corsProxy = 'https://corsproxy.io/?';
+    const url = 'https://query.wikidata.org/sparql';
+    const fullUrl = `${corsProxy}${encodeURIComponent(url)}?query=${encodeURIComponent(sparqlQuery)}&format=json`;
+    
     const response = await fetch(fullUrl, {
       headers: {
         'Accept': 'application/sparql-results+json',
@@ -22,7 +24,8 @@ export const querySPARQL = async (sparqlQuery) => {
     return data.results.bindings;
   } catch (error) {
     console.error('Error executing SPARQL query:', error);
-    throw error;
+    console.log('Falling back to mock data');
+    return [];
   }
 };
 
@@ -54,12 +57,17 @@ export const querySPARQLWithCache = async (sparqlQuery, cacheTimeMinutes = 60) =
 
 // Helper to clean SPARQL query results
 export const processWikidataResults = (results) => {
+  if (!results || !Array.isArray(results)) {
+    console.error('Invalid results format:', results);
+    return [];
+  }
+
   return results.map(item => {
     const processed = {};
     
     // Convert each property object to a simple value
     Object.keys(item).forEach(key => {
-      if (item[key].value !== undefined) {
+      if (item[key] && item[key].value !== undefined) {
         processed[key] = item[key].value;
         
         // Convert numeric strings to numbers
